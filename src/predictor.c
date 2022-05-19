@@ -109,7 +109,7 @@ uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry use
 // design based on an article https://ssine.ink/en/posts/tage-predictor/
 
 // base predictor part
-#define TAGE_BASE_ENTRY 1024 * 1024
+#define TAGE_BASE_ENTRY 16 * 1024
 uint8_t *tage_base_gshare;
 uint64_t tage_base_history;
 
