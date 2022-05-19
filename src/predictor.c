@@ -109,7 +109,7 @@ uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry use
 // design based on an article https://ssine.ink/en/posts/tage-predictor/
 
 // base predictor part
-#define TAGE_BASE_ENTRY 8 * 1024
+#define TAGE_BASE_ENTRY 4 * 1024
 uint8_t *tage_base_gshare;
 uint64_t tage_base_history;
 
@@ -457,9 +457,9 @@ void init_tage() {
 
   // base
   tage_base_history = 0;
-  tage_base_gshare = (uint8_t*)malloc(TAGE_BASE_ENTRY * sizeof(uint8_t));
+  tage_base_gshare = (uint8_t*)malloc(my_pow2(ghistoryBits) * sizeof(uint8_t));
   int i = 0;
-  for(i = 0; i< TAGE_BASE_ENTRY; i++) {
+  for(i = 0; i< my_pow2(ghistoryBits); i++) {
     tage_base_gshare[i] = WN;
   }
 
@@ -498,8 +498,8 @@ void init_tage() {
 
 uint8_t 
 tage_base_predict(uint32_t pc) {
-  uint32_t pc_lower_bits = pc & (TAGE_BASE_ENTRY-1);
-  uint32_t ghistory_lower_bits = tage_base_history & (TAGE_BASE_ENTRY -1);
+  uint32_t pc_lower_bits = pc & (my_pow2(ghistoryBits)-1);
+  uint32_t ghistory_lower_bits = tage_base_history & (my_pow2(ghistoryBits) -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
   switch(tage_base_gshare[index]){
     case WN:
@@ -528,8 +528,8 @@ tage_predict(uint32_t pc) {
 void
 train_tage_base(uint32_t pc, uint8_t outcome) {
   //get lower ghistoryBits of pc
-  uint32_t pc_lower_bits = pc & (TAGE_BASE_ENTRY-1);
-  uint32_t ghistory_lower_bits = tage_base_history & (TAGE_BASE_ENTRY -1);
+  uint32_t pc_lower_bits = pc & (my_pow2(ghistoryBits)-1);
+  uint32_t ghistory_lower_bits = tage_base_history & (my_pow2(ghistoryBits) -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
 
   //Update state of entry in bht based on outcome
