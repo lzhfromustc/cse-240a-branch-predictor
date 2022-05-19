@@ -44,16 +44,16 @@ uint64_t ghistory;
 //-------tournament--------
 // setting: 
 // global part
-#define TOUR_G_ENTRY 32 * 1024
+#define TOUR_G_ENTRY 4 * 1024
 uint8_t *tour_g_bht; // a table with TOUR_G_ENTRY entries, and each entry uses 2 bits
 uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
 // local part
 #define TOUR_L_ENTRY 1 * 1024
-#define TOUR_L_HISTORY 10
+#define TOUR_L_HISTORY 11
 uint16_t *tour_l_history; // a table with TOUR_L_ENTRY entries (1K pc), and each entry uses TOUR_L_HISTORY bits for history
 uint8_t *tour_l_pattern; // a table with 2^TOUR_L_HISTORY entries, and each entry uses 2 bits
 // choice part
-#define TOUR_C_ENTRY 32 * 1024
+#define TOUR_C_ENTRY 4 * 1024
 uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry uses 2 bits
 
 
