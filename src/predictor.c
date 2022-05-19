@@ -291,23 +291,24 @@ tournament_l_predict(uint32_t pc) {
 
 uint8_t 
 tournament_predict(uint32_t pc) {
-  uint8_t g_predict = tournament_g_predict(pc);
-  uint8_t l_predict = tournament_l_predict(pc);
-  //get lower bits of pc
-  uint32_t pc_lower_bits = tour_g_history & (TOUR_C_ENTRY-1);
-  switch(tour_c_choice[pc_lower_bits]){
-    case WN:
-      return g_predict;
-    case SN:
-      return g_predict;
-    case WT:
-      return l_predict;
-    case ST:
-      return l_predict;
-    default:
-      printf("Warning: Undefined state of entry in Tournament predict choice!\n");
-      return g_predict;
-  }
+  return NOTTAKEN;
+  // uint8_t g_predict = tournament_g_predict(pc);
+  // uint8_t l_predict = tournament_l_predict(pc);
+  // //get lower bits of pc
+  // uint32_t pc_lower_bits = tour_g_history & (TOUR_C_ENTRY-1);
+  // switch(tour_c_choice[pc_lower_bits]){
+  //   case WN:
+  //     return g_predict;
+  //   case SN:
+  //     return g_predict;
+  //   case WT:
+  //     return l_predict;
+  //   case ST:
+  //     return l_predict;
+  //   default:
+  //     printf("Warning: Undefined state of entry in Tournament predict choice!\n");
+  //     return g_predict;
+  // }
 }
 
 // train functions
