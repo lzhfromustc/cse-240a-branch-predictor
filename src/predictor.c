@@ -83,9 +83,9 @@ uint64_t ghistory;
 // // choice part
 // #define TOUR_C_ENTRY 4 * 1024
 // uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry uses 2 bits
-int tour_historyBits = 15;
-int pcIndexBits = 15;
-int lhistoryBits = 15;
+int tour_historyBits = 12;
+int pcIndexBits = 10;
+int lhistoryBits = 11;
 #define TOUR_G_ENTRY my_pow2(tour_historyBits)
 uint8_t *tour_g_bht; // a table with TOUR_G_ENTRY entries, and each entry uses 2 bits
 uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
