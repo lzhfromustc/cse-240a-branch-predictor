@@ -109,7 +109,7 @@ uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry use
 // design based on an article https://ssine.ink/en/posts/tage-predictor/
 
 // base predictor part
-#define TAGE_BASE_ENTRY 16 * 1024
+#define TAGE_BASE_ENTRY 8 * 1024
 uint8_t *tage_base_gshare;
 uint64_t tage_base_history;
 
@@ -131,7 +131,6 @@ typedef struct tage_comp_entry {
 
 typedef struct tage_history {
   uint8_t len_history;
-  uint8_t len_targe;
   uint64_t compressed;
 } history;
 
@@ -483,15 +482,12 @@ void init_tage() {
 
     tage_comp_list[i].first_tag.len_history = TAGE_HISTORY_LEN[i];
     tage_comp_list[i].first_tag.compressed = 0;
-    tage_comp_list[i].first_tag.len_targe = (uint8_t) (TAGE_TAG_LEN - ( (i + (TAGE_COMP_NUM & 1)) / 2) );
 
     tage_comp_list[i].second_tag.len_history = TAGE_HISTORY_LEN[i];
     tage_comp_list[i].second_tag.compressed = 0;
-    tage_comp_list[i].second_tag.len_targe = (uint8_t) (TAGE_TAG_LEN - ( (i + (TAGE_COMP_NUM & 1)) / 2) - 1 );
 
     tage_comp_list[i].index.len_history = TAGE_HISTORY_LEN[i];
     tage_comp_list[i].index.compressed = 0;
-    tage_comp_list[i].index.len_targe = (uint8_t) my_log2(TAGE_COMP_ENTRY);
 
     tage_comp_list[i].len_history = TAGE_HISTORY_LEN[i];
   }
