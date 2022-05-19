@@ -129,16 +129,8 @@ typedef struct tage_comp_entry {
   uint8_t usage; // whether this entry is useful
 } comp_entry;
 
-typedef struct tage_history {
-  uint8_t len_history;
-  uint64_t compressed;
-} history;
-
 typedef struct tage_comp {
   comp_entry entry[TAGE_COMP_ENTRY];
-  history index;
-  history first_tag;
-  history second_tag;
   uint8_t len_history;
 } comp;
 
@@ -250,11 +242,11 @@ void init_tournament() {
   for(i = 0; i< my_pow2(TOUR_L_HISTORY); i++){
     tour_l_pattern[i] = WN;
   }
-  printf("tournament's l_pattern has %d entries\n", my_pow2(TOUR_L_HISTORY));
-  for(i = 0; i< my_pow2(TOUR_L_HISTORY); i++){
-    printf("%u;", tour_l_pattern[i]);
-  }
-  printf("\n");
+  // printf("tournament's l_pattern has %d entries\n", my_pow2(TOUR_L_HISTORY));
+  // for(i = 0; i< my_pow2(TOUR_L_HISTORY); i++){
+  //   printf("%u;", tour_l_pattern[i]);
+  // }
+  // printf("\n");
   // printf("tournament predictor's local pattern table has %d entries, and each entry is 2 bit\n", my_pow2(TOUR_L_HISTORY));
   // printf("tournament predictor's local table has %d entries, and each entry is %d bit\n", TOUR_L_ENTRY, TOUR_L_HISTORY);
 
@@ -457,9 +449,9 @@ void init_tage() {
 
   // base
   tage_base_history = 0;
-  tage_base_gshare = (uint8_t*)malloc(my_pow2(ghistoryBits) * sizeof(uint8_t));
+  tage_base_gshare = (uint8_t*)malloc((my_pow2(ghistoryBits+1)) * sizeof(uint8_t));
   int i = 0;
-  for(i = 0; i< my_pow2(ghistoryBits); i++) {
+  for(i = 0; i< (my_pow2(ghistoryBits+1)); i++) {
     tage_base_gshare[i] = WN;
   }
 
@@ -480,15 +472,6 @@ void init_tage() {
       tage_comp_list[i].entry[j].usage = 00;
     }
 
-    tage_comp_list[i].first_tag.len_history = TAGE_HISTORY_LEN[i];
-    tage_comp_list[i].first_tag.compressed = 0;
-
-    tage_comp_list[i].second_tag.len_history = TAGE_HISTORY_LEN[i];
-    tage_comp_list[i].second_tag.compressed = 0;
-
-    tage_comp_list[i].index.len_history = TAGE_HISTORY_LEN[i];
-    tage_comp_list[i].index.compressed = 0;
-
     tage_comp_list[i].len_history = TAGE_HISTORY_LEN[i];
   }
 
@@ -496,10 +479,35 @@ void init_tage() {
 
 // predict
 
+uint64_t hash1(uint32_t pc, uint8_t len_history) {
+  uint64_t result = 0;
+  for (int i = 0; i < len_history; i++) {
+    if ((pc & 1) ^ tage_g_history[i]) {
+      result += 1 << i;
+    }
+    pc = pc >> 1;
+  }
+  return result;
+}
+
+uint64_t hash2(uint32_t pc, uint8_t len_history) {
+  uint64_t result = 0;
+  for (int i = 0; i < len_history; i++) {
+    if ((pc & 1) ^ tage_g_history[i]) {
+      result += 1 << i;
+    }
+    pc = pc << 1;
+  }
+  return result;
+}
+
 uint8_t 
-tage_base_predict(uint32_t pc) {
-  uint32_t pc_lower_bits = pc & (my_pow2(ghistoryBits)-1);
-  uint32_t ghistory_lower_bits = tage_base_history & (my_pow2(ghistoryBits) -1);
+tage_predict(uint32_t pc) {
+  uint8_t final_predict = NOTTAKEN;
+  uint8_t base_predict = NOTTAKEN;
+
+  uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits+1))-1);
+  uint32_t ghistory_lower_bits = tage_base_history & ((my_pow2(ghistoryBits+1)) -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
   switch(tage_base_gshare[index]){
     case WN:
@@ -514,49 +522,155 @@ tage_base_predict(uint32_t pc) {
       printf("Warning: Undefined state of entry in TAGE base GSHARE BHT!\n");
       return NOTTAKEN;
   }
-}
 
-uint8_t 
-tage_predict(uint32_t pc) {
-  uint8_t base_predict = tage_base_predict(pc);
-  return base_predict;
+  uint8_t index_provider = 200;
+  uint8_t index_candidate = 200;
+  uint64_t hash_provider = 0;
+  uint64_t hash_candidate = 0;
+  for (int i = 0; i < TAGE_COMP_NUM; i++) {
+    uint64_t hash_1 = hash1(pc, tage_comp_list[i].len_history);
+    hash_1 = hash_1 & (TAGE_COMP_ENTRY - 1);
+    uint64_t hash_2 = hash2(pc, tage_comp_list[i].len_history);
+    hash_2 = hash_2 & (my_pow2(TAGE_TAG_LEN) - 1);
+    comp_entry entry = tage_comp_list[i].entry[hash_1];
+    if (entry.tag == hash_2) {
+      if (index_provider == 200) {
+        index_provider = i;
+        hash_provider = hash_1;
+      } else {
+        index_candidate = i;
+        hash_candidate = hash_1;
+      }
+    }
+  }
+
+  if (index_provider == 200) {
+    final_predict = base_predict;
+  } else {
+    switch (tage_comp_list[index_provider].entry[hash_provider].choice) {
+      case WN:
+        final_predict =  NOTTAKEN;
+      case SN:
+        final_predict =  NOTTAKEN;
+      case WT:
+        final_predict =  TAKEN;
+      case ST:
+        final_predict =  TAKEN;
+      default:
+        printf("Warning: Undefined state of entry in TAGE base GSHARE BHT!\n");
+        final_predict =  NOTTAKEN;
+    }
+  }
+  
+  return final_predict;
 }
 
 
 
 // train
+
 void
-train_tage_base(uint32_t pc, uint8_t outcome) {
+tage_train(uint32_t pc, uint8_t outcome) {
   //get lower ghistoryBits of pc
-  uint32_t pc_lower_bits = pc & (my_pow2(ghistoryBits)-1);
-  uint32_t ghistory_lower_bits = tage_base_history & (my_pow2(ghistoryBits) -1);
+  uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits+1))-1);
+  uint32_t ghistory_lower_bits = tage_base_history & ((my_pow2(ghistoryBits+1)) -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
+  //Update history register
+  tage_base_history = ((tage_base_history << 1) | outcome); 
 
   //Update state of entry in bht based on outcome
   switch(tage_base_gshare[index]){
     case WN:
       tage_base_gshare[index] = (outcome==TAKEN)?WT:SN;
-      break;
+      return;
     case SN:
       tage_base_gshare[index] = (outcome==TAKEN)?WN:SN;
-      break;
+      return;
     case WT:
       tage_base_gshare[index] = (outcome==TAKEN)?ST:WN;
-      break;
+      return;
     case ST:
       tage_base_gshare[index] = (outcome==TAKEN)?ST:WT;
-      break;
+      return;
     default:
       printf("Warning: Undefined state of entry in TAGE base GSHARE BHT!\n");
+      return;
   }
 
-  //Update history register
-  tage_base_history = ((tage_base_history << 1) | outcome); 
-}
+  uint8_t final_predict = NOTTAKEN;
+  uint8_t index_provider = 200;
+  uint8_t index_candidate = 200;
+  uint64_t hash_provider = 0;
+  uint64_t hash_candidate = 0;
+  for (int i = 0; i < TAGE_COMP_NUM; i++) {
+    uint64_t hash_1 = hash1(pc, tage_comp_list[i].len_history);
+    hash_1 = hash_1 & (TAGE_COMP_ENTRY - 1);
+    uint64_t hash_2 = hash2(pc, tage_comp_list[i].len_history);
+    hash_2 = hash_2 & (my_pow2(TAGE_TAG_LEN) - 1);
+    comp_entry entry = tage_comp_list[i].entry[hash_1];
+    if (entry.tag == hash_2) {
+      if (index_provider == 200) {
+        index_provider = i;
+        hash_provider = hash_1;
+      } else {
+        index_candidate = i;
+        hash_candidate = hash_1;
+      }
+    }
+  }
 
-void
-tage_train(uint32_t pc, uint8_t outcome) {
-  train_tage_base(pc, outcome);
+  if (index_provider == 200) {
+    return;
+  } else {
+    switch (tage_comp_list[index_provider].entry[hash_provider].choice) {
+      case WN:
+        final_predict = NOTTAKEN;
+        tage_comp_list[index_provider].entry[hash_provider].choice = (outcome==TAKEN)?WT:SN;
+      case SN:
+        final_predict = NOTTAKEN;
+        tage_comp_list[index_provider].entry[hash_provider].choice = (outcome==TAKEN)?WN:SN;
+      case WT:
+        final_predict = TAKEN;
+        tage_comp_list[index_provider].entry[hash_provider].choice = (outcome==TAKEN)?ST:WN;
+      case ST:
+        final_predict = TAKEN;
+        tage_comp_list[index_provider].entry[hash_provider].choice = (outcome==TAKEN)?ST:WT;
+      default:
+        printf("Warning: Undefined state of entry in TAGE base GSHARE BHT!\n");
+    }
+
+    if (index_candidate == 200) {
+      return;
+    } else {
+      switch (tage_comp_list[index_candidate].entry[hash_candidate].choice) {
+        case WN:
+          tage_comp_list[index_candidate].entry[hash_candidate].choice = (outcome==TAKEN)?WT:SN;
+        case SN:
+          tage_comp_list[index_candidate].entry[hash_candidate].choice = (outcome==TAKEN)?WN:SN;
+        case WT:
+          tage_comp_list[index_candidate].entry[hash_candidate].choice = (outcome==TAKEN)?ST:WN;
+        case ST:
+          tage_comp_list[index_candidate].entry[hash_candidate].choice = (outcome==TAKEN)?ST:WT;
+        default:
+          printf("Warning: Undefined state of entry in TAGE base GSHARE BHT!\n");
+      }
+
+      if (final_predict != tage_comp_list[index_candidate].entry[hash_candidate].choice) {
+        tage_comp_list[index_candidate].entry[hash_candidate].usage --;
+        if (tage_comp_list[index_candidate].entry[hash_candidate].usage < 0) {
+          tage_comp_list[index_candidate].entry[hash_candidate].usage = 0;
+        }
+      } else {
+        tage_comp_list[index_candidate].entry[hash_candidate].usage ++;
+        if (tage_comp_list[index_candidate].entry[hash_candidate].usage > 3) {
+          tage_comp_list[index_candidate].entry[hash_candidate].usage = 3;
+        }
+      }
+
+      
+    }
+
+  }
 }
 
 
