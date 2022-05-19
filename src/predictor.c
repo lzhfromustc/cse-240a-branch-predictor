@@ -536,7 +536,7 @@ init_predictor()
       init_gshare();
       break;
     case TOURNAMENT:
-      init_tage();
+      init_tournament();
       break;
     case CUSTOM:
       init_tage();
@@ -562,7 +562,7 @@ make_prediction(uint32_t pc)
     case GSHARE:
       return gshare_predict(pc);
     case TOURNAMENT:
-      return tage_predict(pc);
+      return tournament_predict(pc);
     case CUSTOM:
       return tage_predict(pc);
     default:
@@ -587,7 +587,7 @@ train_predictor(uint32_t pc, uint8_t outcome)
     case GSHARE:
       return train_gshare(pc, outcome);
     case TOURNAMENT:
-      return tage_train(pc, outcome);
+      return tournament_train(pc, outcome);
     case CUSTOM:
       return tage_train(pc, outcome);
     default:
