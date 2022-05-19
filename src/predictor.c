@@ -516,22 +516,22 @@ tage_predict(uint32_t pc) {
   uint8_t flag_all_one = 1;
   uint32_t pc_copy = pc;
 
-  for (int i = 0; i < TAGE_COMP_NUM+1; i++) {
-    if ((pc_copy & 1) == 0) {
-      flag_all_one = 0;
-      break;
-    }
-    pc_copy = pc_copy >> 1;
-  }
-  all_count++;
-  if (flag_all_one == 1) {
-    early_break++;
-    // printf("early vs all: %d vs %d\n", early_break, all_count);
-    return base_predict;
-  }
+  // for (int i = 0; i < TAGE_COMP_NUM; i++) {
+  //   if ((pc_copy & 1) == 0) {
+  //     flag_all_one = 0;
+  //     break;
+  //   }
+  //   pc_copy = pc_copy >> 1;
+  // }
+  // all_count++;
+  // if (flag_all_one == 1) {
+  //   early_break++;
+  //   // printf("early vs all: %d vs %d\n", early_break, all_count);
+  //   return base_predict;
+  // }
 
-  uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits+1))-1);
-  uint32_t ghistory_lower_bits = tage_base_history & ((my_pow2(ghistoryBits+1)) -1);
+  uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits))-1);
+  uint32_t ghistory_lower_bits = tage_base_history & ((my_pow2(ghistoryBits)) -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
   switch(tage_base_gshare[index]){
     case WN:
