@@ -44,6 +44,12 @@ void print_backward_binary(uint32_t input) {
   printf("\n");
 }
 
+// Definitions for 2-bit counters
+#define SN  0			// predict NT, strong not taken
+#define WN  1			// predict NT, weak not taken
+#define WT  2			// predict T, weak taken
+#define ST  3			// predict T, strong taken
+
 //------------------------------------//
 //      Predictor Configuration       //
 //------------------------------------//
@@ -92,7 +98,7 @@ uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
 // local part
 #define TOUR_L_ENTRY my_pow2(pcIndexBits)
 #define TOUR_L_HISTORY lhistoryBits
-uint16_t *tour_l_history; // a table with TOUR_L_ENTRY entries (1K pc), and each entry uses TOUR_L_HISTORY bits for history
+uint32_t *tour_l_history; // a table with TOUR_L_ENTRY entries (1K pc), and each entry uses TOUR_L_HISTORY bits for history
 uint8_t *tour_l_pattern; // a table with 2^TOUR_L_HISTORY entries, and each entry uses 2 bits
 // choice part
 #define TOUR_C_ENTRY my_pow2(tour_historyBits)
@@ -237,14 +243,19 @@ void init_tournament() {
   }
   // printf("tournament predictor's global pattern table has %d entries, and each entry is 2 bit\n", TOUR_G_ENTRY);
 
-  tour_l_history = (uint16_t*)malloc(TOUR_L_ENTRY & sizeof(uint16_t));
+  tour_l_history = (uint32_t*)malloc(TOUR_L_ENTRY * sizeof(uint32_t));
   tour_l_pattern = (uint8_t*)malloc(my_pow2(TOUR_L_HISTORY) * sizeof(uint8_t));
   for(i = 0; i< TOUR_L_ENTRY; i++){
-    tour_l_history[i] = (uint16_t) 0;
+    tour_l_history[i] = 0;
   }
   for(i = 0; i< my_pow2(TOUR_L_HISTORY); i++){
     tour_l_pattern[i] = WN;
   }
+  printf("tournament's l_pattern has %d entries\n", my_pow2(TOUR_L_HISTORY));
+  for(i = 0; i< my_pow2(TOUR_L_HISTORY); i++){
+    printf("%u;", tour_l_pattern[i]);
+  }
+  printf("\n");
   // printf("tournament predictor's local pattern table has %d entries, and each entry is 2 bit\n", my_pow2(TOUR_L_HISTORY));
   // printf("tournament predictor's local table has %d entries, and each entry is %d bit\n", TOUR_L_ENTRY, TOUR_L_HISTORY);
 
@@ -284,11 +295,14 @@ tournament_l_predict(uint32_t pc) {
   // get lower bits of pc
   uint32_t pc_lower_bits = pc & (TOUR_L_ENTRY-1);
   // get local history of this branch
-  uint16_t local_history = tour_l_history[pc_lower_bits];
+  uint32_t local_history = tour_l_history[pc_lower_bits];
   local_history = local_history & (my_pow2(TOUR_L_HISTORY) - 1);
   // if (pc == 4259562) {
   //     print_backward_binary(local_history);
   // }
+  if (local_history >= my_pow2(TOUR_L_HISTORY)) {
+    printf("Error in l_predict: local_history is %u, but entry num is my_pow2(TOUR_L_HISTORY)\n", local_history);
+  }
   
   // get prediction
   switch(tour_l_pattern[local_history]) {
@@ -301,7 +315,7 @@ tournament_l_predict(uint32_t pc) {
     case ST:
       return TAKEN;
     default:
-      printf("Warning: Undefined state of entry in Tournament l predict!\n");
+      printf("Warning: Undefined state of entry in Tournament l predict: %u\n", tour_l_pattern[local_history]);
       return NOTTAKEN;
   }
 }
@@ -362,9 +376,12 @@ void tournament_l_train(uint32_t pc, uint8_t outcome) {
   // get lower bits of pc
   uint32_t pc_lower_bits = pc & (TOUR_L_ENTRY-1);
   // get local history of this branch
-  uint16_t local_history = tour_l_history[pc_lower_bits];
+  uint32_t local_history = tour_l_history[pc_lower_bits];
   local_history &= (my_pow2(TOUR_L_HISTORY) - 1);
-  // get prediction
+  if (local_history >= my_pow2(TOUR_L_HISTORY)) {
+    printf("Error in l_train: local_history is %u, but entry num is my_pow2(TOUR_L_HISTORY)\n", local_history);
+  }
+  // train
   switch(tour_l_pattern[local_history]) {
     case WN:
       tour_l_pattern[local_history] = (outcome==TAKEN)?WT:SN;
@@ -379,7 +396,7 @@ void tournament_l_train(uint32_t pc, uint8_t outcome) {
       tour_l_pattern[local_history] = (outcome==TAKEN)?ST:WT;
       break;
     default:
-      printf("Warning: Undefined state of entry in Tournament l train!\n");
+      printf("Warning: Undefined state of entry in Tournament l train: %u!\n", tour_l_pattern[local_history]);
   }
 
   // Update local history
