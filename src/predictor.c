@@ -44,16 +44,16 @@ uint64_t ghistory;
 //-------tournament--------
 // setting: 
 // global part
-int TOUR_G_ENTRY = 4 * 1024;
+#define TOUR_G_ENTRY 4 * 1024
 uint8_t *tour_g_bht; // a table with TOUR_G_ENTRY entries, and each entry uses 2 bits
 uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
 // local part
-int TOUR_L_ENTRY = 1 * 1024;
-int TOUR_L_HISTORY = 11;
+#define TOUR_L_ENTRY 1 * 1024
+#define TOUR_L_HISTORY 11
 uint16_t *tour_l_history; // a table with TOUR_L_ENTRY entries (1K pc), and each entry uses TOUR_L_HISTORY bits for history
 uint8_t *tour_l_pattern; // a table with 2^TOUR_L_HISTORY entries, and each entry uses 2 bits
 // choice part
-int TOUR_C_ENTRY = 4 * 1024;
+#define TOUR_C_ENTRY 4 * 1024
 uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry uses 2 bits
 
 
@@ -61,16 +61,16 @@ uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry use
 // design based on an article https://ssine.ink/en/posts/tage-predictor/
 
 // base predictor part
-const int TAGE_BASE_ENTRY = 1024 * 1024;
+#define TAGE_BASE_ENTRY 1024 * 1024
 uint8_t *tage_base_gshare;
 uint64_t tage_base_history;
 
 // tagged predictor part
-const int TAGE_COMP_NUM = 5; // there are 5 components, and each component is a tagged predictor
-const int TAGE_TAG_LEN = 10;
-const int TAGE_COMP_ENTRY = 256; // number of entries in each component
+#define TAGE_COMP_NUM 5 // there are 5 components, and each component is a tagged predictor
+#define TAGE_TAG_LEN 10
+#define TAGE_COMP_ENTRY 256 // number of entries in each component
 const uint8_t TAGE_HISTORY_LEN[TAGE_COMP_NUM] = {80, 40, 20, 10, 5}; // the length of history used by each component is different
-const int TAGE_G_HISTORY_LEN = 128;
+#define TAGE_G_HISTORY_LEN 128
 
 uint8_t tage_g_history[TAGE_G_HISTORY_LEN]; // a very long history, and each component will use part of it
 uint32_t tage_l_history;
@@ -108,7 +108,13 @@ int my_pow2(int input) {
 }
 
 int my_log2(int input) {
-  return (int)log2(input);
+  for (int i = 0; i < 30; i++) {
+    int try = 1 << i;
+    if (try == input) {
+      return i;
+    }
+  }
+  return 0;
 }
 
 // Initialize the predictor
@@ -480,6 +486,8 @@ tage_predict(uint32_t pc) {
   uint8_t base_predict = tage_base_predict(pc);
   return base_predict;
 }
+
+
 
 // train
 void
