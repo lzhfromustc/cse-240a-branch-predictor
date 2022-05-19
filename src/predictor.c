@@ -48,8 +48,8 @@ uint64_t ghistory;
 uint8_t *tour_g_bht; // a table with TOUR_G_ENTRY entries, and each entry uses 2 bits
 uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
 // local part
-#define TOUR_L_ENTRY 1 * 1024
-#define TOUR_L_HISTORY 10
+#define TOUR_L_ENTRY 10 * 1024
+#define TOUR_L_HISTORY 15
 uint16_t *tour_l_history; // a table with TOUR_L_ENTRY entries (1K pc), and each entry uses TOUR_L_HISTORY bits for history
 uint8_t *tour_l_pattern; // a table with 2^TOUR_L_HISTORY entries, and each entry uses 2 bits
 // choice part
@@ -293,9 +293,9 @@ uint8_t
 tournament_predict(uint32_t pc) {
   uint8_t g_predict = tournament_g_predict(pc);
   uint8_t l_predict = tournament_l_predict(pc);
-  //get lower bits of pc
-  uint32_t pc_lower_bits = pc & (TOUR_C_ENTRY-1);
-  switch(tour_c_choice[pc_lower_bits]){
+  //get lower bits of global_history
+  uint32_t g_lower_bits = tour_g_history & (TOUR_C_ENTRY-1);
+  switch(tour_c_choice[g_lower_bits]){
     case WN:
       return g_predict;
     case SN:
@@ -346,7 +346,7 @@ void tournament_l_train(uint32_t pc, uint8_t outcome) {
   uint32_t pc_lower_bits = pc & (TOUR_L_ENTRY-1);
   // get local history of this branch
   uint16_t local_history = tour_l_history[pc_lower_bits];
-  local_history = local_history & (my_pow2(TOUR_L_HISTORY) - 1);
+  local_history &= (my_pow2(TOUR_L_HISTORY) - 1);
   // get prediction
   switch(tour_l_pattern[local_history]) {
     case WN:
@@ -366,30 +366,35 @@ void tournament_l_train(uint32_t pc, uint8_t outcome) {
   }
 
   // Update local history
-  tour_l_history[pc_lower_bits] = ((local_history << 1) | outcome); 
+  tour_l_history[pc_lower_bits] <<= 1;
+  tour_l_history[pc_lower_bits] &= (my_pow2(TOUR_L_HISTORY) - 1);
+  tour_l_history[pc_lower_bits] |= outcome;
 }
 
 void
 tournament_train(uint32_t pc, uint8_t outcome) {
   uint8_t g_predict = tournament_g_predict(pc);
   uint8_t l_predict = tournament_l_predict(pc);
-  //get lower bits of pc
-  uint32_t pc_lower_bits = tour_g_history & (TOUR_C_ENTRY-1);
-  switch(tour_c_choice[pc_lower_bits]){
-    case WN:
-      tour_c_choice[pc_lower_bits] = (outcome == g_predict)?SN:WT;
-      break;
-    case SN:
-      tour_c_choice[pc_lower_bits] = (outcome == g_predict)?SN:WN;
-      break;
-    case WT:
-      tour_c_choice[pc_lower_bits] = (outcome == l_predict)?ST:WN;
-      break;
-    case ST:
-      tour_c_choice[pc_lower_bits] = (outcome == l_predict)?ST:WT;
-      break;
-    default:
-      printf("Warning: Undefined state of entry in Tournament train choice!\n");
+  //get lower bits of global history
+  uint32_t g_lower_bits = tour_g_history & (TOUR_C_ENTRY-1);
+  if (g_predict != l_predict) {
+    switch(tour_c_choice[g_lower_bits]){
+      // Note: different logic here. If l_predict is correct, rely more on local prediction
+      case WN:
+        tour_c_choice[g_lower_bits] = (outcome != l_predict)?SN:WT;
+        break;
+      case SN:
+        tour_c_choice[g_lower_bits] = (outcome != l_predict)?SN:WN;
+        break;
+      case WT:
+        tour_c_choice[g_lower_bits] = (outcome != l_predict)?ST:WN;
+        break;
+      case ST:
+        tour_c_choice[g_lower_bits] = (outcome != l_predict)?ST:WT;
+        break;
+      default:
+        printf("Warning: Undefined state of entry in Tournament train choice!\n");
+    }
   }
 
   tournament_g_train(pc, outcome);
