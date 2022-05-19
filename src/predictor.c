@@ -501,10 +501,34 @@ uint64_t hash2(uint32_t pc, uint8_t len_history) {
   return result;
 }
 
+int early_break = 0;
+int all_count = 0;
+
 uint8_t 
 tage_predict(uint32_t pc) {
   uint8_t final_predict = NOTTAKEN;
   uint8_t base_predict = NOTTAKEN;
+
+  uint8_t index_provider = 200;
+  uint8_t index_candidate = 200;
+  uint64_t hash_provider = 0;
+  uint64_t hash_candidate = 0;
+  uint8_t flag_all_one = 1;
+  uint32_t pc_copy = pc;
+
+  for (int i = 0; i < TAGE_COMP_NUM+1; i++) {
+    if ((pc_copy & 1) == 0) {
+      flag_all_one = 0;
+      break;
+    }
+    pc_copy = pc_copy >> 1;
+  }
+  all_count++;
+  if (flag_all_one == 1) {
+    early_break++;
+    // printf("early vs all: %d vs %d\n", early_break, all_count);
+    return base_predict;
+  }
 
   uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits+1))-1);
   uint32_t ghistory_lower_bits = tage_base_history & ((my_pow2(ghistoryBits+1)) -1);
@@ -523,10 +547,7 @@ tage_predict(uint32_t pc) {
       return NOTTAKEN;
   }
 
-  uint8_t index_provider = 200;
-  uint8_t index_candidate = 200;
-  uint64_t hash_provider = 0;
-  uint64_t hash_candidate = 0;
+
   for (int i = 0; i < TAGE_COMP_NUM; i++) {
     uint64_t hash_1 = hash1(pc, tage_comp_list[i].len_history);
     hash_1 = hash_1 & (TAGE_COMP_ENTRY - 1);
