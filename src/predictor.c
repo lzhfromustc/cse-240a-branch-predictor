@@ -16,6 +16,34 @@ const char *studentName = "Ziheng Liu";
 const char *studentID   = "A59010078";
 const char *email       = "zil060@ucsd.edu";
 
+
+// Utilities
+int my_pow2(int input) {
+  return 1 << input;
+}
+
+int my_log2(int input) {
+  for (int i = 0; i < 30; i++) {
+    int try = 1 << i;
+    if (try == input) {
+      return i;
+    }
+  }
+  return 0;
+}
+
+void print_backward_binary(uint32_t input) {
+  while (input) {
+    if (input & 1 )
+        printf("1");
+    else
+        printf("0");
+
+    input = input >> 1;
+  }
+  printf("\n");
+}
+
 //------------------------------------//
 //      Predictor Configuration       //
 //------------------------------------//
@@ -44,16 +72,29 @@ uint64_t ghistory;
 //-------tournament--------
 // setting: 
 // global part
-#define TOUR_G_ENTRY 4 * 1024
+// #define TOUR_G_ENTRY 4 * 1024
+// uint8_t *tour_g_bht; // a table with TOUR_G_ENTRY entries, and each entry uses 2 bits
+// uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
+// // local part
+// #define TOUR_L_ENTRY 1 * 1024
+// #define TOUR_L_HISTORY 10
+// uint16_t *tour_l_history; // a table with TOUR_L_ENTRY entries (1K pc), and each entry uses TOUR_L_HISTORY bits for history
+// uint8_t *tour_l_pattern; // a table with 2^TOUR_L_HISTORY entries, and each entry uses 2 bits
+// // choice part
+// #define TOUR_C_ENTRY 4 * 1024
+// uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry uses 2 bits
+int pcIndexBits = 10;
+int lhistoryBits = 10;
+#define TOUR_G_ENTRY my_pow2(ghistoryBits)
 uint8_t *tour_g_bht; // a table with TOUR_G_ENTRY entries, and each entry uses 2 bits
 uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
 // local part
-#define TOUR_L_ENTRY 1 * 1024
-#define TOUR_L_HISTORY 11
+#define TOUR_L_ENTRY my_pow2(pcIndexBits)
+#define TOUR_L_HISTORY lhistoryBits
 uint16_t *tour_l_history; // a table with TOUR_L_ENTRY entries (1K pc), and each entry uses TOUR_L_HISTORY bits for history
 uint8_t *tour_l_pattern; // a table with 2^TOUR_L_HISTORY entries, and each entry uses 2 bits
 // choice part
-#define TOUR_C_ENTRY 4 * 1024
+#define TOUR_C_ENTRY my_pow2(ghistoryBits)
 uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry uses 2 bits
 
 
@@ -102,32 +143,7 @@ uint16_t tage_comp_entry_index[TAGE_COMP_NUM]; // store the entry index in tage_
 //        Predictor Functions         //
 //------------------------------------//
 
-// Utilities
-int my_pow2(int input) {
-  return 1 << input;
-}
 
-int my_log2(int input) {
-  for (int i = 0; i < 30; i++) {
-    int try = 1 << i;
-    if (try == input) {
-      return i;
-    }
-  }
-  return 0;
-}
-
-void print_backward_binary(uint32_t input) {
-  while (input) {
-    if (input & 1 )
-        printf("1");
-    else
-        printf("0");
-
-    input = input >> 1;
-  }
-  printf("\n");
-}
 
 // Initialize the predictor
 //
