@@ -536,7 +536,7 @@ init_predictor()
       init_gshare();
       break;
     case TOURNAMENT:
-      init_tournament();
+      init_tage();
       break;
     case CUSTOM:
       init_tage();
