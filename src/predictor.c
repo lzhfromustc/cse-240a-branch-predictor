@@ -117,6 +117,18 @@ int my_log2(int input) {
   return 0;
 }
 
+void print_backward_binary(uint32_t input) {
+  while (input) {
+    if (input & 1 )
+        printf("1");
+    else
+        printf("0");
+
+    input = input >> 1;
+  }
+  printf("\n");
+}
+
 // Initialize the predictor
 //
 
@@ -124,8 +136,8 @@ int my_log2(int input) {
 void init_gshare() {
  int bht_entries = 1 << ghistoryBits;
   bht_gshare = (uint8_t*)malloc(bht_entries * sizeof(uint8_t));
-  unsigned long size_alloc = 0;
-  size_alloc += bht_entries;
+  // unsigned long size_alloc = 0;
+  // size_alloc += bht_entries;
   // printf("gshare predictor malloc used %lu entries, and each entry is 2 bit\n", size_alloc);
   // printf("TEST: log2 of 4*1024 is %d\n", my_log2(4*1024));
   // printf("TEST: 2^12 is %d\n", my_pow2(12));
@@ -233,7 +245,7 @@ uint8_t
 tournament_g_predict(uint32_t pc) {
   //get lower ghistoryBits of pc
   uint32_t pc_lower_bits = pc & (TOUR_G_ENTRY-1);
-  uint32_t ghistory_lower_bits = ghistory & (TOUR_G_ENTRY -1);
+  uint32_t ghistory_lower_bits = tour_g_history & (TOUR_G_ENTRY -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
   switch(tour_g_bht[index]){
     case WN:
@@ -248,18 +260,6 @@ tournament_g_predict(uint32_t pc) {
       printf("Warning: Undefined state of entry in Tournament g predict!\n");
       return NOTTAKEN;
   }
-}
-
-void print_backward_binary(uint16_t input) {
-  while (input) {
-    if (input & 1 )
-        printf("1");
-    else
-        printf("0");
-
-    input = input >> 1;
-  }
-  printf("\n");
 }
 
 uint8_t 
@@ -292,20 +292,22 @@ tournament_l_predict(uint32_t pc) {
 uint8_t 
 tournament_predict(uint32_t pc) {
   uint8_t g_predict = tournament_g_predict(pc);
+  // TODO: delete this
+  return g_predict;
   uint8_t l_predict = tournament_l_predict(pc);
   //get lower bits of pc
-  uint32_t pc_lower_bits = tour_g_history & (TOUR_C_ENTRY-1);
+  uint32_t pc_lower_bits = pc & (TOUR_C_ENTRY-1);
   switch(tour_c_choice[pc_lower_bits]){
     case WN:
       return g_predict;
     case SN:
       return g_predict;
     case WT:
-      return g_predict;
+      return l_predict;
     case ST:
-      return g_predict;
+      return l_predict;
     default:
-      // printf("Warning: Undefined state of entry in Tournament predict choice!\n");
+      printf("Warning: Undefined state of entry in Tournament predict choice!\n");
       return g_predict;
   }
 }
@@ -316,7 +318,7 @@ void
 tournament_g_train(uint32_t pc, uint8_t outcome) {
   //get lower bits of pc
   uint32_t pc_lower_bits = pc & (TOUR_G_ENTRY-1);
-  uint32_t ghistory_lower_bits = ghistory & (TOUR_G_ENTRY -1);
+  uint32_t ghistory_lower_bits = tour_g_history & (TOUR_G_ENTRY -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
 
   //Update state of entry in bht based on outcome
@@ -371,29 +373,30 @@ void tournament_l_train(uint32_t pc, uint8_t outcome) {
 
 void
 tournament_train(uint32_t pc, uint8_t outcome) {
-  uint8_t g_predict = tournament_g_predict(pc);
-  uint8_t l_predict = tournament_l_predict(pc);
-  //get lower bits of pc
-  uint32_t pc_lower_bits = tour_g_history & (TOUR_C_ENTRY-1);
-  switch(tour_c_choice[pc_lower_bits]){
-    case WN:
-      tour_c_choice[pc_lower_bits] = (outcome == g_predict)?SN:WT;
-      break;
-    case SN:
-      tour_c_choice[pc_lower_bits] = (outcome == g_predict)?SN:WN;
-      break;
-    case WT:
-      tour_c_choice[pc_lower_bits] = (outcome == l_predict)?ST:WN;
-      break;
-    case ST:
-      tour_c_choice[pc_lower_bits] = (outcome == l_predict)?ST:WT;
-      break;
-    default:
-      printf("Warning: Undefined state of entry in Tournament train choice!\n");
-  }
+  // TODO: uncomment
+  // uint8_t g_predict = tournament_g_predict(pc);
+  // uint8_t l_predict = tournament_l_predict(pc);
+  // //get lower bits of pc
+  // uint32_t pc_lower_bits = tour_g_history & (TOUR_C_ENTRY-1);
+  // switch(tour_c_choice[pc_lower_bits]){
+  //   case WN:
+  //     tour_c_choice[pc_lower_bits] = (outcome == g_predict)?SN:WT;
+  //     break;
+  //   case SN:
+  //     tour_c_choice[pc_lower_bits] = (outcome == g_predict)?SN:WN;
+  //     break;
+  //   case WT:
+  //     tour_c_choice[pc_lower_bits] = (outcome == l_predict)?ST:WN;
+  //     break;
+  //   case ST:
+  //     tour_c_choice[pc_lower_bits] = (outcome == l_predict)?ST:WT;
+  //     break;
+  //   default:
+  //     printf("Warning: Undefined state of entry in Tournament train choice!\n");
+  // }
 
   tournament_g_train(pc, outcome);
-  tournament_l_train(pc, outcome);
+  // tournament_l_train(pc, outcome);
 }
 
 // cleanup function
