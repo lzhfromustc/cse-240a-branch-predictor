@@ -53,7 +53,7 @@ const char *bpName[4] = { "Static", "Gshare",
                           "Tournament", "Custom" };
 
 //define number of bits required for indexing the BHT here. 
-int ghistoryBits = 12; // Number of bits used for Global History
+int ghistoryBits = 14; // Number of bits used for Global History
 int bpType;       // Branch Prediction Type
 int verbose;
 
@@ -83,9 +83,10 @@ uint64_t ghistory;
 // // choice part
 // #define TOUR_C_ENTRY 4 * 1024
 // uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry uses 2 bits
-int pcIndexBits = 10;
-int lhistoryBits = 10;
-#define TOUR_G_ENTRY my_pow2(ghistoryBits)
+int tour_historyBits = 15;
+int pcIndexBits = 15;
+int lhistoryBits = 15;
+#define TOUR_G_ENTRY my_pow2(tour_historyBits)
 uint8_t *tour_g_bht; // a table with TOUR_G_ENTRY entries, and each entry uses 2 bits
 uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
 // local part
@@ -94,7 +95,7 @@ uint64_t tour_g_history; // use only the last log2(TOUR_G_ENTRY) bits
 uint16_t *tour_l_history; // a table with TOUR_L_ENTRY entries (1K pc), and each entry uses TOUR_L_HISTORY bits for history
 uint8_t *tour_l_pattern; // a table with 2^TOUR_L_HISTORY entries, and each entry uses 2 bits
 // choice part
-#define TOUR_C_ENTRY my_pow2(ghistoryBits)
+#define TOUR_C_ENTRY my_pow2(tour_historyBits)
 uint8_t *tour_c_choice; // a table with TOUR_C_ENTRY entries, and each entry uses 2 bits
 
 
@@ -403,10 +404,10 @@ tournament_train(uint32_t pc, uint8_t outcome) {
         tour_c_choice[g_lower_bits] = (outcome != l_predict)?SN:WN;
         break;
       case WT:
-        tour_c_choice[g_lower_bits] = (outcome != l_predict)?ST:WN;
+        tour_c_choice[g_lower_bits] = (outcome != l_predict)?WN:ST;
         break;
       case ST:
-        tour_c_choice[g_lower_bits] = (outcome != l_predict)?ST:WT;
+        tour_c_choice[g_lower_bits] = (outcome != l_predict)?WT:ST;
         break;
       default:
         printf("Warning: Undefined state of entry in Tournament train choice!\n");
