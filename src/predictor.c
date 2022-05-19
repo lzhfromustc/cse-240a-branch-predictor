@@ -449,7 +449,7 @@ void init_tage() {
 
   // base
   tage_base_history = 0;
-  tage_base_gshare = (uint8_t*)malloc((my_pow2(ghistoryBits+1)) * sizeof(uint8_t));
+  tage_base_gshare = (uint8_t*)malloc((my_pow2(ghistoryBits) + TAGE_BASE_ENTRY) * sizeof(uint8_t));
   int i = 0;
   for(i = 0; i< (my_pow2(ghistoryBits+1)); i++) {
     tage_base_gshare[i] = WN;
@@ -506,7 +506,7 @@ tage_predict(uint32_t pc) {
   uint8_t final_predict = NOTTAKEN;
   uint8_t base_predict = NOTTAKEN;
 
-  uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits+1))-1);
+  uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits) + TAGE_BASE_ENTRY)-1);
   uint32_t ghistory_lower_bits = tage_base_history & ((my_pow2(ghistoryBits+1)) -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
   switch(tage_base_gshare[index]){
@@ -572,7 +572,7 @@ tage_predict(uint32_t pc) {
 void
 tage_train(uint32_t pc, uint8_t outcome) {
   //get lower ghistoryBits of pc
-  uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits+1))-1);
+  uint32_t pc_lower_bits = pc & ((my_pow2(ghistoryBits) + TAGE_BASE_ENTRY)-1);
   uint32_t ghistory_lower_bits = tage_base_history & ((my_pow2(ghistoryBits+1)) -1);
   uint32_t index = pc_lower_bits ^ ghistory_lower_bits;
   //Update history register
