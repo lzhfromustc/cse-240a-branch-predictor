@@ -53,7 +53,7 @@ const char *bpName[4] = { "Static", "Gshare",
                           "Tournament", "Custom" };
 
 //define number of bits required for indexing the BHT here. 
-int ghistoryBits = 14; // Number of bits used for Global History
+int ghistoryBits = 12; // Number of bits used for Global History
 int bpType;       // Branch Prediction Type
 int verbose;
 
