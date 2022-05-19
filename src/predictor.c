@@ -126,9 +126,9 @@ void init_gshare() {
   bht_gshare = (uint8_t*)malloc(bht_entries * sizeof(uint8_t));
   unsigned long size_alloc = 0;
   size_alloc += bht_entries;
-  printf("gshare predictor malloc used %lu entries, and each entry is 2 bit\n", size_alloc);
-  printf("TEST: log2 of 4*1024 is %d\n", my_log2(4*1024));
-  printf("TEST: 2^12 is %d\n", my_pow2(12));
+  // printf("gshare predictor malloc used %lu entries, and each entry is 2 bit\n", size_alloc);
+  // printf("TEST: log2 of 4*1024 is %d\n", my_log2(4*1024));
+  // printf("TEST: 2^12 is %d\n", my_pow2(12));
   int i = 0;
   for(i = 0; i< bht_entries; i++){
     bht_gshare[i] = WN;
@@ -206,7 +206,7 @@ void init_tournament() {
   for(i = 0; i< TOUR_G_ENTRY; i++){
     tour_g_bht[i] = WN;
   }
-  printf("tournament predictor's global pattern table has %d entries, and each entry is 2 bit\n", TOUR_G_ENTRY);
+  // printf("tournament predictor's global pattern table has %d entries, and each entry is 2 bit\n", TOUR_G_ENTRY);
 
   tour_l_history = (uint16_t*)malloc(TOUR_L_ENTRY & sizeof(uint16_t));
   tour_l_pattern = (uint8_t*)malloc(my_pow2(TOUR_L_HISTORY) * sizeof(uint8_t));
@@ -216,14 +216,14 @@ void init_tournament() {
   for(i = 0; i< my_pow2(TOUR_L_HISTORY); i++){
     tour_l_pattern[i] = WN;
   }
-  printf("tournament predictor's local pattern table has %d entries, and each entry is 2 bit\n", my_pow2(TOUR_L_HISTORY));
-  printf("tournament predictor's local table has %d entries, and each entry is %d bit\n", TOUR_L_ENTRY, TOUR_L_HISTORY);
+  // printf("tournament predictor's local pattern table has %d entries, and each entry is 2 bit\n", my_pow2(TOUR_L_HISTORY));
+  // printf("tournament predictor's local table has %d entries, and each entry is %d bit\n", TOUR_L_ENTRY, TOUR_L_HISTORY);
 
   tour_c_choice = (uint8_t*)malloc(TOUR_C_ENTRY * sizeof(uint8_t));
   for(i = 0; i< TOUR_C_ENTRY; i++){
     tour_c_choice[i] = WN;
   }
-  printf("tournament predictor's choice pattern table has %d entries, and each entry is 2 bit\n", TOUR_C_ENTRY);
+  // printf("tournament predictor's choice pattern table has %d entries, and each entry is 2 bit\n", TOUR_C_ENTRY);
   
 }
 
